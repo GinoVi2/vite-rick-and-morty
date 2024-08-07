@@ -1,7 +1,19 @@
 <template>
-  <v-container>
+  <v-container v-if="localizacionApi">
     <v-row>
-      <v-col v-for="localizacion of localizaciones" cols="12">
+      <v-col cols="12">
+        <v-card class="bg-primary">
+          <v-card-actions class="justify-space-around">
+            <v-btn @click="prevLocalizacion" variant="elevated" color="red">
+              Anterior
+            </v-btn>
+            <v-btn @click="nextLocalizacion" variant="elevated" color="red">
+              Siguiente
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+      <v-col v-for="localizacion of localizacionApi.results" cols="12">
         <LocalizacionesItem :localizacion="localizacion" />
       </v-col>
     </v-row>
@@ -9,48 +21,39 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, nextTick } from "vue";
 import LocalizacionesItem from "../components/Cards/LocalizacionesItem.vue";
+import axios from "axios";
 
-const localizaciones = ref([
-  {
-    id: 3,
-    name: "Citadel of Ricks",
-    type: "Space station",
-    dimension: "unknown",
-    residents: [
-      "https://rickandmortyapi.com/api/character/8",
-      "https://rickandmortyapi.com/api/character/14",
-      // ...
-    ],
-    url: "https://rickandmortyapi.com/api/location/3",
-    created: "2017-11-10T13:08:13.191Z",
-  },
-  {
-    id: 21,
-    name: "Testicle Monster Dimension",
-    type: "Dimension",
-    dimension: "Testicle Monster Dimension",
-    residents: [
-      "https://rickandmortyapi.com/api/character/7",
-      "https://rickandmortyapi.com/api/character/436",
-    ],
-    url: "https://rickandmortyapi.com/api/location/21",
-    created: "2017-11-18T19:41:01.605Z",
-  },
-  {
-    id: 1,
-    name: "Earth",
-    type: "Planet",
-    dimension: "Dimension C-137",
-    residents: [
-      "https://rickandmortyapi.com/api/character/1",
-      "https://rickandmortyapi.com/api/character/2",
-    ],
-    url: "https://rickandmortyapi.com/api/location/1",
-    created: "2017-11-10T12:42:04.162Z",
-  },
-]);
+const localizacionApi = ref(null);
+
+async function getLocalizacion() {
+  const data = await axios.get(`https://rickandmortyapi.com/api/location`);
+  console.log(data);
+  localizacionApi.value = data.data;
+}
+async function nextLocalizacion() {
+  if (localizacionApi.value.info.next == null) {
+    getLocalizacion();
+    return;
+  }
+
+  const data = await axios.get(`${localizacionApi.value.info.next}`);
+  localizacionApi.value = data.data;
+}
+async function prevLocalizacion() {
+  if (localizacionApi.value.info.prev == null) {
+    getLocalizacion();
+    return;
+  }
+
+  const data = await axios.get(`${localizacionApi.value.info.prev}`);
+
+  localizacionApi.value = data.data;
+}
+onMounted(() => {
+  getLocalizacion();
+});
 </script>
 
 <style scoped></style>
